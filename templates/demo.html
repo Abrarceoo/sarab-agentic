@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SARAB — Live Agentic Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #020508;
+  --surface: #070d14;
+  --card: #0a1220;
+  --border: rgba(0,212,232,0.08);
+  --cyan: #00d4e8;
+  --green: #00e896;
+  --red: #ff4060;
+  --amber: #f4a800;
+  --purple: #9b6dff;
+  --white: #ffffff;
+  --text: #c8d4e8;
+  --muted: #3a4a68;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,212,232,0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,232,0.012) 1px, transparent 1px);
+  background-size: 52px 52px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app { position: relative; z-index: 1; max-width: 1600px; margin: 0 auto; padding: 28px 24px 60px; }
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: -1px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-ar {
+  font-size: 16px;
+  color: var(--cyan);
+  font-weight: 400;
+  letter-spacing: 2px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hbadge {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 2px;
+  border: 1px solid;
+}
+
+.hb-cyan   { color: var(--cyan);   border-color: rgba(0,212,232,0.3);   background: rgba(0,212,232,0.05); }
+.hb-green  { color: var(--green);  border-color: rgba(0,232,150,0.3);   background: rgba(0,232,150,0.05); }
+.hb-purple { color: var(--purple); border-color: rgba(155,109,255,0.3); background: rgba(155,109,255,0.05); }
+
+/* ── LOOP DIAGRAM ── */
+.loop-diagram {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 28px;
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  flex-wrap: wrap;
+}
+
+.loop-step {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.loop-node {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.loop-node.active-plan    { color: var(--cyan);   border-color: var(--cyan);   background: rgba(0,212,232,0.1);   box-shadow: 0 0 12px rgba(0,212,232,0.2); }
+.loop-node.active-act     { color: var(--amber);  border-color: var(--amber);  background: rgba(244,168,0,0.1);   box-shadow: 0 0 12px rgba(244,168,0,0.2); }
+.loop-node.active-observe { color: var(--purple); border-color: var(--purple); background: rgba(155,109,255,0.1); box-shadow: 0 0 12px rgba(155,109,255,0.2); }
+.loop-node.active-reflect { color: var(--green);  border-color: var(--green);  background: rgba(0,232,150,0.1);   box-shadow: 0 0 12px rgba(0,232,150,0.2); }
+
+.loop-arrow {
+  color: var(--muted);
+  font-size: 16px;
+  padding: 0 8px;
+}
+
+.loop-back {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── ROOMS GRID ── */
+.rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+  .rooms-grid { grid-template-columns: 1fr; }
+}
+
+/* ── ROOM CARD ── */
+.room-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+
+.room-card.running { border-color: rgba(0,212,232,0.4); }
+.room-card.complete-success { border-color: rgba(0,232,150,0.4); }
+.room-card.waste { border-color: rgba(255,64,96,0.3); }
+
+/* Room header */
+.room-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.room-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.room-scenario {
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 2px;
+}
+
+.sc-waste   { color: var(--red);    background: rgba(255,64,96,0.1);  border: 1px solid rgba(255,64,96,0.2); }
+.sc-timing  { color: var(--amber);  background: rgba(244,168,0,0.1);  border: 1px solid rgba(244,168,0,0.2); }
+.sc-occupied{ color: var(--green);  background: rgba(0,232,150,0.1);  border: 1px solid rgba(0,232,150,0.2); }
+
+/* Room metrics */
+.room-metrics {
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.metric {
+  text-align: center;
+  padding: 10px 6px;
+  background: var(--surface);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.metric-icon { font-size: 16px; display: block; margin-bottom: 4px; }
+.metric-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--white);
+  display: block;
+  font-weight: 700;
+}
+.metric-lbl {
+  font-size: 9px;
+  color: var(--muted);
+  display: block;
+  margin-top: 2px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Loop log */
+.loop-log {
+  padding: 12px 16px;
+  height: 280px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.loop-log::-webkit-scrollbar { width: 3px; }
+.loop-log::-webkit-scrollbar-track { background: transparent; }
+.loop-log::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
+
+.log-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  animation: logIn 0.3s ease both;
+  font-size: 11px;
+}
+
+@keyframes logIn {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.log-badge {
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 1px;
+  padding: 2px 7px;
+  border-radius: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.lb-plan    { color: var(--cyan);   background: rgba(0,212,232,0.1);  border: 1px solid rgba(0,212,232,0.2); }
+.lb-act     { color: var(--amber);  background: rgba(244,168,0,0.1);  border: 1px solid rgba(244,168,0,0.2); }
+.lb-observe { color: var(--purple); background: rgba(155,109,255,0.1); border: 1px solid rgba(155,109,255,0.2); }
+.lb-reflect { color: var(--green);  background: rgba(0,232,150,0.1);  border: 1px solid rgba(0,232,150,0.2); }
+.lb-memory  { color: #ff9060;       background: rgba(255,144,96,0.1); border: 1px solid rgba(255,144,96,0.2); }
+.lb-system  { color: var(--muted);  background: rgba(58,74,104,0.2);  border: 1px solid rgba(58,74,104,0.3); }
+
+.log-text {
+  color: rgba(200,212,232,0.65);
+  line-height: 1.5;
+  flex: 1;
+}
+
+.log-text.important { color: var(--white); font-weight: 500; }
+
+/* Thinking */
+.thinking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.dots span {
+  display: inline-block;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--cyan);
+  margin: 0 1px;
+  animation: dot 1.4s ease-in-out infinite;
+}
+.dots span:nth-child(2) { animation-delay: 0.2s; }
+.dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dot {
+  0%,80%,100% { opacity: 0.2; transform: scale(0.7); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+.thinking-text {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  color: var(--cyan);
+  letter-spacing: 2px;
+}
+
+/* Run button */
+.run-btn {
+  margin: 12px 16px 16px;
+  padding: 10px;
+  border: 1px solid rgba(0,212,232,0.3);
+  background: rgba(0,212,232,0.06);
+  color: var(--cyan);
+  border-radius: 6px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  width: calc(100% - 32px);
+}
+
+.run-btn:hover:not(:disabled) { background: rgba(0,212,232,0.12); border-color: rgba(0,212,232,0.5); }
+.run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.run-btn.success { border-color: rgba(0,232,150,0.4); background: rgba(0,232,150,0.08); color: var(--green); }
+
+/* Result banner */
+.result-banner {
+  margin: 0 16px 16px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.result-banner.show { display: flex; animation: fadeIn 0.4s ease; }
+.result-banner.success { background: rgba(0,232,150,0.06); border: 1px solid rgba(0,232,150,0.2); }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.result-savings {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--green);
+  letter-spacing: -1px;
+}
+
+.result-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.result-loops {
+  font-size: 11px;
+  color: rgba(200,212,232,0.5);
+  margin-top: 4px;
+}
+
+/* ── BUILDING STATS ── */
+.building-stats {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 28px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 700px) {
+  .building-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+.bs-item { text-align: center; }
+
+.bs-num {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(24px, 3vw, 36px);
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.bs-lbl {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+/* Memory indicator */
+.memory-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255,144,96,0.05);
+  border-top: 1px solid var(--border);
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  color: rgba(255,144,96,0.6);
+  letter-spacing: 1px;
+}
+
+.mem-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #ff9060;
+  box-shadow: 0 0 6px #ff9060;
+  flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">
+      SARAB <span class="logo-ar">سَرَب</span>
+    </div>
+    <div class="header-right">
+      <span class="hbadge hb-cyan">Agentic Loop</span>
+      <span class="hbadge hb-green">Real LLM</span>
+      <span class="hbadge hb-purple">Live Memory</span>
+    </div>
+  </div>
+
+  <!-- LOOP DIAGRAM -->
+  <div class="loop-diagram">
+    <div class="loop-step">
+      <div class="loop-node" id="node-plan">Plan</div>
+      <div class="loop-arrow">→</div>
+    </div>
+    <div class="loop-step">
+      <div class="loop-node" id="node-act">Act</div>
+      <div class="loop-arrow">→</div>
+    </div>
+    <div class="loop-step">
+      <div class="loop-node" id="node-observe">Observe</div>
+      <div class="loop-arrow">→</div>
+    </div>
+    <div class="loop-step">
+      <div class="loop-node" id="node-reflect">Reflect</div>
+    </div>
+    <div class="loop-back">
+      <span>↺</span> LLM re-evaluates if incorrect
+    </div>
+  </div>
+
+  <!-- ROOMS -->
+  <div class="rooms-grid">
+
+    <!-- ROOM 4B — Obvious Waste -->
+    <div class="room-card waste" id="card-room_4b">
+      <div class="room-header">
+        <div class="room-title">Conference Room 4B</div>
+        <span class="room-scenario sc-waste">Obvious Waste</span>
+      </div>
+      <div class="room-metrics">
+        <div class="metric">
+          <span class="metric-icon">⭕</span>
+          <span class="metric-val" id="occ-room_4b">Empty</span>
+          <span class="metric-lbl">Status</span>
+        </div>
+        <div class="metric">
+          <span class="metric-icon">❄️</span>
+          <span class="metric-val" id="ac-room_4b">80%</span>
+          <span class="metric-lbl">AC Level</span>
+        </div>
+        <div class="metric">
+          <span class="metric-icon">💡</span>
+          <span class="metric-val" id="light-room_4b">ON</span>
+          <span class="metric-lbl">Lights</span>
+        </div>
+      </div>
+      <div class="memory-indicator">
+        <div class="mem-dot"></div>
+        <span id="mem-room_4b">Long-term memory: 0 decisions</span>
+      </div>
+      <div class="loop-log" id="log-room_4b">
+        <div class="log-item">
+          <span class="log-badge lb-system">SYSTEM</span>
+          <span class="log-text">Room 4B ready. 52min empty. AC 80%. Waste detected.</span>
+        </div>
+      </div>
+      <div class="result-banner" id="result-room_4b">
+        <div class="result-savings" id="savings-room_4b">0 SAR</div>
+        <div class="result-label">Saved this session</div>
+        <div class="result-loops" id="loops-room_4b"></div>
+      </div>
+      <button class="run-btn" id="btn-room_4b" onclick="runAgent('room_4b')">
+        ▶ RUN SARAB AGENT
+      </button>
+    </div>
+
+    <!-- ROOM 4C — Critical Timing -->
+    <div class="room-card" id="card-room_4c">
+      <div class="room-header">
+        <div class="room-title">Conference Room 4C</div>
+        <span class="room-scenario sc-timing">Critical Timing</span>
+      </div>
+      <div class="room-metrics">
+        <div class="metric">
+          <span class="metric-icon">⭕</span>
+          <span class="metric-val" id="occ-room_4c">Empty</span>
+          <span class="metric-lbl">Status</span>
+        </div>
+        <div class="metric">
+          <span class="metric-icon">❄️</span>
+          <span class="metric-val" id="ac-room_4c">60%</span>
+          <span class="metric-lbl">AC Level</span>
+        </div>
+        <div class="metric">
+          <span class="metric-icon">⏰</span>
+          <span class="metric-val" id="booking-room_4c">20min</span>
+          <span class="metric-lbl">Next Booking</span>
+        </div>
+      </div>
+      <div class="memory-indicator">
+        <div class="mem-dot"></div>
+        <span id="mem-room_4c">Long-term memory: 0 decisions</span>
+      </div>
+      <div class="loop-log" id="log-room_4c">
+        <div class="log-item">
+          <span class="log-badge lb-system">SYSTEM</span>
+          <span class="log-text">Room 4C empty but booking in 20min. Agent must think carefully.</span>
+        </div>
+      </div>
+      <div class="result-banner" id="result-room_4c">
+        <div class="result-savings" id="savings-room_4c">0 SAR</div>
+        <div class="result-label">Saved this session</div>
+        <div class="result-loops" id="loops-room_4c"></div>
+      </div>
+      <button class="run-btn" id="btn-room_4c" onclick="runAgent('room_4c')">
+        ▶ RUN SARAB AGENT
+      </button>
+    </div>
+
+    <!-- ROOM 4A — Occupied -->
+    <div class="room-card" id="card-room_4a">
+      <div class="room-header">
+        <div class="room-title">Conference Room 4A</div>
+        <span class="room-scenario sc-occupied">Occupied</span>
+      </div>
+      <div class="room-metrics">
+        <div class="metric">
+          <span class="metric-icon">👥</span>
+          <span class="metric-val" id="occ-room_4a">Occupied</span>
+          <span class="metric-lbl">Status</span>
+        </div>
+        <div class="metric">
+          <span class="metric-icon">❄️</span>
+          <span class="metric-val" id="ac-room_4a">70%</span>
+          <span class="metric-lbl">AC Level</span>
+        </div>
+        <div class="metric">
+          <span class="metric-icon">🌡️</span>
+          <span class="metric-val" id="temp-room_4a">24°C</span>
+          <span class="metric-lbl">Temp</span>
+        </div>
+      </div>
+      <div class="memory-indicator">
+        <div class="mem-dot"></div>
+        <span id="mem-room_4a">Long-term memory: 0 decisions</span>
+      </div>
+      <div class="loop-log" id="log-room_4a">
+        <div class="log-item">
+          <span class="log-badge lb-system">SYSTEM</span>
+          <span class="log-text">Room 4A occupied. Agent must preserve comfort while optimizing.</span>
+        </div>
+      </div>
+      <div class="result-banner" id="result-room_4a">
+        <div class="result-savings" id="savings-room_4a">0 SAR</div>
+        <div class="result-label">Saved this session</div>
+        <div class="result-loops" id="loops-room_4a"></div>
+      </div>
+      <button class="run-btn" id="btn-room_4a" onclick="runAgent('room_4a')">
+        ▶ RUN SARAB AGENT
+      </button>
+    </div>
+
+  </div>
+
+  <!-- BUILDING STATS -->
+  <div class="building-stats">
+    <div class="bs-item">
+      <div class="bs-num" style="color:var(--green)" id="total-saved">0</div>
+      <div class="bs-lbl">Total SAR Saved</div>
+    </div>
+    <div class="bs-item">
+      <div class="bs-num" style="color:var(--cyan)" id="total-loops">0</div>
+      <div class="bs-lbl">Total Loops</div>
+    </div>
+    <div class="bs-item">
+      <div class="bs-num" style="color:var(--amber)" id="total-decisions">0</div>
+      <div class="bs-lbl">Decisions Made</div>
+    </div>
+    <div class="bs-item">
+      <div class="bs-num" style="color:var(--purple)" id="memory-count">0</div>
+      <div class="bs-lbl">Memory Entries</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = 'http://localhost:5000';
+let totalSaved = 0;
+let totalLoops = 0;
+let totalDecisions = 0;
+let memoryCount = 0;
+
+function addLog(roomKey, type, text, important = false) {
+  const log = document.getElementById(`log-${roomKey}`);
+  const item = document.createElement('div');
+  item.className = 'log-item';
+
+  const badges = {
+    plan:    ['PLAN',    'lb-plan'],
+    act:     ['ACT',     'lb-act'],
+    observe: ['OBSERVE', 'lb-observe'],
+    reflect: ['REFLECT', 'lb-reflect'],
+    memory:  ['MEMORY',  'lb-memory'],
+    system:  ['SYSTEM',  'lb-system'],
+  };
+
+  const [label, cls] = badges[type] || ['SYS', 'lb-system'];
+  item.innerHTML = `
+    <span class="log-badge ${cls}">${label}</span>
+    <span class="log-text ${important ? 'important' : ''}">${text}</span>
+  `;
+  log.appendChild(item);
+  log.scrollTop = log.scrollHeight;
+}
+
+function addThinking(roomKey) {
+  const log = document.getElementById(`log-${roomKey}`);
+  const el = document.createElement('div');
+  el.className = 'thinking';
+  el.id = `thinking-${roomKey}`;
+  el.innerHTML = `
+    <div class="dots"><span></span><span></span><span></span></div>
+    <span class="thinking-text">LLM THINKING...</span>
+  `;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}
+
+function removeThinking(roomKey) {
+  const el = document.getElementById(`thinking-${roomKey}`);
+  if (el) el.remove();
+}
+
+function setLoopNode(phase) {
+  ['plan','act','observe','reflect'].forEach(p => {
+    document.getElementById(`node-${p}`).className = 'loop-node';
+  });
+  if (phase) {
+    document.getElementById(`node-${phase}`).className = `loop-node active-${phase}`;
+  }
+}
+
+function updateStats() {
+  document.getElementById('total-saved').textContent = totalSaved.toFixed(2);
+  document.getElementById('total-loops').textContent = totalLoops;
+  document.getElementById('total-decisions').textContent = totalDecisions;
+  document.getElementById('memory-count').textContent = memoryCount;
+}
+
+async function runAgent(roomKey) {
+  const btn = document.getElementById(`btn-${roomKey}`);
+  const card = document.getElementById(`card-${roomKey}`);
+  const result = document.getElementById(`result-${roomKey}`);
+
+  btn.disabled = true;
+  btn.textContent = 'AGENT RUNNING...';
+  card.className = 'room-card running';
+  result.className = 'result-banner';
+
+  addLog(roomKey, 'plan', 'Starting Agentic Loop...', true);
+  addThinking(roomKey);
+
+  try {
+    const response = await fetch(`${API}/api/run/${roomKey}`);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        if (!raw) continue;
+
+        try {
+          const event = JSON.parse(raw);
+          removeThinking(roomKey);
+
+          if (event.type === 'loop') {
+            totalLoops++;
+            updateStats();
+            setLoopNode('plan');
+            addLog(roomKey, 'plan', `Loop #${event.loop} — Planning next action`);
+            addThinking(roomKey);
+          }
+
+          else if (event.type === 'tool_call') {
+            removeThinking(roomKey);
+            setLoopNode('act');
+
+            const toolNames = {
+              'check_room_status': 'Checking room status',
+              'control_hvac': `Setting AC to ${event.input?.new_level}%`,
+              'control_lighting': `Lights → ${event.input?.action?.toUpperCase()}`,
+              'calculate_savings': 'Calculating energy savings',
+              'store_to_memory': 'Storing to long-term memory',
+              'evaluate_decision': 'Evaluating decision quality'
+            };
+
+            const msg = toolNames[event.tool] || event.tool;
+            const type = event.tool === 'store_to_memory' ? 'memory' :
+                         event.tool === 'evaluate_decision' ? 'reflect' : 'act';
+            addLog(roomKey, type, msg, true);
+            addThinking(roomKey);
+          }
+
+          else if (event.type === 'tool_result') {
+            removeThinking(roomKey);
+            setLoopNode('observe');
+
+            if (event.tool === 'check_room_status') {
+              const r = event.result;
+              addLog(roomKey, 'observe',
+                `Waste detected: ${r.waste_detected} | AC: ${r.ac_level_percent}% | Empty: ${r.empty_duration_minutes}min`
+              );
+            }
+            else if (event.tool === 'control_hvac') {
+              document.getElementById(`ac-${roomKey}`) &&
+                (document.getElementById(`ac-${roomKey}`).textContent = event.result.new_level + '%');
+              addLog(roomKey, 'observe',
+                `AC reduced from ${event.result.previous_level}% → ${event.result.new_level}%`
+              );
+            }
+            else if (event.tool === 'control_lighting') {
+              addLog(roomKey, 'observe', `Lights: ${event.result.previous_state} → ${event.result.new_state}`);
+            }
+            else if (event.tool === 'calculate_savings') {
+              addLog(roomKey, 'observe',
+                `Savings: ${event.result.savings_sar} SAR | CO₂: ${event.result.co2_reduced_kg}kg`,
+                true
+              );
+            }
+            else if (event.tool === 'store_to_memory') {
+              memoryCount = event.result.total_decisions || memoryCount + 1;
+              document.getElementById(`mem-${roomKey}`).textContent =
+                `Long-term memory: ${memoryCount} decisions stored`;
+              updateStats();
+              addLog(roomKey, 'memory', `Decision stored. Total: ${event.result.total_decisions}`);
+            }
+            else if (event.tool === 'evaluate_decision') {
+              setLoopNode('reflect');
+              const correct = event.result.is_correct;
+              addLog(roomKey, 'reflect',
+                correct ? '✅ Decision verified correct — goal achieved' : '❌ Decision needs adjustment — retrying',
+                true
+              );
+            }
+            addThinking(roomKey);
+          }
+
+          else if (event.type === 'complete') {
+            removeThinking(roomKey);
+            setLoopNode(null);
+
+            totalSaved += event.savings || 0;
+            totalDecisions++;
+            updateStats();
+
+            card.className = 'room-card complete-success';
+            btn.textContent = '✅ OPTIMIZED';
+            btn.className = 'run-btn success';
+
+            document.getElementById(`savings-${roomKey}`).textContent =
+              (event.savings || 0).toFixed(2) + ' SAR';
+            document.getElementById(`loops-${roomKey}`).textContent =
+              `Completed in ${event.loops} loops · ${event.reason?.slice(0,80)}...`;
+            result.className = 'result-banner success show';
+
+            addLog(roomKey, 'reflect',
+              `✅ GOAL ACHIEVED — ${event.savings} SAR saved in ${event.loops} loops`,
+              true
+            );
+          }
+
+          else if (event.type === 'done') {
+            removeThinking(roomKey);
+            setLoopNode(null);
+            btn.disabled = false;
+            btn.textContent = '▶ RUN AGAIN';
+          }
+
+        } catch(e) { /* skip */ }
+      }
+    }
+
+  } catch(err) {
+    removeThinking(roomKey);
+    addLog(roomKey, 'system', `Error: ${err.message}. Make sure Flask server is running on port 5000.`);
+    btn.disabled = false;
+    btn.textContent = '▶ RETRY';
+    card.className = 'room-card';
+  }
+}
+</script>
+</body>
+</html>
