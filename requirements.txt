@@ -1,6 +1,8 @@
-
 flask
 flask-cors
 anthropic
 python-dotenv
 gunicorn
+faiss-cpu
+numpy
+sentence-transformers
